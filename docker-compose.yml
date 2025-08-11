@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: pg-perfect-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: pg-perfect
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - pg-perfect-network
+
+  backend:
+    build: ./backend
+    container_name: pg-perfect-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - MONGO_URI=mongodb://mongodb:27017/pg-perfect
+    depends_on:
+      - mongodb
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - pg-perfect-network
+
+  frontend:
+    build: ./frontend/perfect-pg-front
+    container_name: pg-perfect-frontend
+    restart: unless-stopped
+    ports:
+      - "5174:5174"
+    environment:
+      - VITE_BASE_URL=http://localhost:5000/app
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend/perfect-pg-front:/app
+      - /app/node_modules
+    networks:
+      - pg-perfect-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  pg-perfect-network:
+    driver: bridge
